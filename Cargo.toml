@@ -1,12 +1,13 @@
 [package]
-name = "freya-template"
+name = "dioxus_i18n"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev="49c5a5043a16fc82210af146c345793dd448e519", features = ["macro", "hooks"]}
-fluent = "0.16.0"
-freya = { git="https://github.com/marc2332/freya", rev="799d54e33abeb94a8e4be0c095ff2deee33591a9" }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev="0527cff3a59ba3176f7510a7234c5977ce1b17d7", features = ["macro", "hooks"]}
 serde = "1.0.163"
 serde_json = "1.0.96"
 unic-langid = { version = "0.9.1", features = ["serde"]}
+
+[dev-dependencies]
+freya = { git="https://github.com/marc2332/freya", rev="66e9eb9aef7a5d8a43c61e7e6c5b5ffc3ba2f648" }

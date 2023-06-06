@@ -1,0 +1,8 @@
+{
+    "id": "en-US",
+    "texts": {
+        "messages": {
+            "hello": "Hello, {name}!"
+        }
+    }
+}
