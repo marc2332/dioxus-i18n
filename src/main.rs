@@ -4,29 +4,69 @@
 )]
 
 use freya::prelude::*;
-use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, str::FromStr};
 use unic_langid::LanguageIdentifier;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 struct Language {
     id: LanguageIdentifier,
-    texts: HashMap<String, String>,
+    texts: Text,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+enum Text {
+    Value(String),
+    Texts(HashMap<String, Text>),
+}
+
+impl Default for Text {
+    fn default() -> Self {
+        Self::Texts(HashMap::default())
+    }
+}
+
+impl Text {
+    fn query(&self, steps: &mut Vec<&str>) -> Option<String> {
+        match self {
+            Text::Texts(texts) => {
+                if steps.is_empty() {
+                    return None;
+                }
+
+                let current_path = steps.join(".");
+
+                let this_step = steps.remove(0);
+                let deep = texts.get(this_step)?;
+                let res = deep.query(steps);
+                if res.is_none() {
+                    let res_text = texts.get(&current_path);
+                    if let Some(res_text) = res_text {
+                        return res_text.query(steps);
+                    }
+                }
+                res
+            }
+            Text::Value(value) => Some(value.to_owned()),
+        }
+    }
+}
+
+impl FromStr for Language {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s).map_err(|_| ())
+    }
 }
 
 impl Language {
-    pub fn new(id: LanguageIdentifier) -> Self {
-        Self {
-            id,
-            ..Default::default()
-        }
-    }
+    pub fn get_text(&self, path: &str, params: HashMap<String, String>) -> Option<String> {
+        let mut steps = path.split('.').collect::<Vec<&str>>();
 
-    pub fn add_text(&mut self, id: impl ToString, text: impl ToString) {
-        self.texts.insert(id.to_string(), text.to_string());
-    }
+        let mut text = self.texts.query(&mut steps).unwrap_or_default();
 
-    pub fn get_text(&self, id: &str, params: HashMap<String, String>) -> Option<String> {
-        let mut text = self.texts.get(id)?.clone();
         for (name, value) in params {
             text = text.replacen(&format!("{{{name}}}"), &value.to_string(), 1);
         }
@@ -38,6 +78,7 @@ fn main() {
     launch(app)
 }
 
+#[derive(Clone, Copy)]
 struct UseI18<'a> {
     pub selected_language: UseSharedState<'a, LanguageIdentifier>,
     pub languages: UseSharedState<'a, Vec<Language>>,
@@ -56,6 +97,10 @@ impl<'a> UseI18<'a> {
 
     fn t(&self, id: &str) -> String {
         self.t_p(id, HashMap::default())
+    }
+
+    fn set_language(&self, id: LanguageIdentifier) {
+        *self.selected_language.write() = id;
     }
 }
 
@@ -78,10 +123,29 @@ fn use_i18(cx: &ScopeState) -> UseI18 {
     }
 }
 
+static EN_US: &str = include_str!("./en-US.json");
+static ES_ES: &str = include_str!("./es-ES.json");
+
 #[allow(non_snake_case)]
 fn Body(cx: Scope) -> Element {
     let i18 = use_i18(cx);
+
+    let change_to_english = move |_| i18.set_language("en-US".parse().unwrap());
+    let change_to_spanish = move |_| i18.set_language("es-ES".parse().unwrap());
+
     render!(
+        Button {
+            onclick: change_to_english,
+            label {
+                "English"
+            }
+        }
+        Button {
+            onclick: change_to_spanish,
+            label {
+                "Spanish"
+            }
+        }
         label {
             i18.t("messages.hello_world")
         }
@@ -93,12 +157,9 @@ fn Body(cx: Scope) -> Element {
 
 fn app(cx: Scope) -> Element {
     init_i18(cx, "en-US".parse().unwrap(), || {
-        let mut language = Language::new("en-US".parse().unwrap());
-
-        language.add_text("messages.hello_world", "Hello World!");
-        language.add_text("messages.hello", "Hello {name}");
-
-        vec![language]
+        let en_us = Language::from_str(EN_US).unwrap();
+        let es_es = Language::from_str(ES_ES).unwrap();
+        vec![en_us, es_es]
     });
 
     render!(Body {})
