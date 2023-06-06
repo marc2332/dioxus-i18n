@@ -5,4 +5,6 @@ edition = "2021"
 
 [dependencies]
 dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev="49c5a5043a16fc82210af146c345793dd448e519", features = ["macro", "hooks"]}
+fluent = "0.16.0"
 freya = { git="https://github.com/marc2332/freya", rev="799d54e33abeb94a8e4be0c095ff2deee33591a9" }
+unic-langid = "0.9.1"
