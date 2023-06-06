@@ -6,7 +6,7 @@ This is a `i18n` library for Dioxus applications, it's renderer-agnostic too.
 
 ### Example with [`freya`](https://github.com/marc2332/freya)
 
-```json
+```js
 // en-US.json
 {
     "id": "en-US",
