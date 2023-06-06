@@ -2,7 +2,8 @@
     "id": "en-US",
     "texts": {
         "messages": {
-            "hello": "Hello, {name}!"
-        }
+            "hello_world": "Hello World!"
+        },
+        "messages.hello": "Hello {name}"
     }
 }
